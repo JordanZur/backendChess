@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: backendChess
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false

@@ -6,22 +6,26 @@ const saveScan = async (username, dateRange, bannedPlayers) => {
     });
 
     for (const player of bannedPlayers) {
-        const bannedPlayer = await db.bannedPlayer.upsert({
-            where: { username: player.username },
-            update: {},
-            create: {
-                username: player.username,
-                profileUrl: player.profileUrl,
-            },
-        });
+        try {
+            const bannedPlayer = await db.bannedPlayer.upsert({
+                where: { username: player.username },
+                update: {},
+                create: {
+                    username: player.username,
+                    profileUrl: player.profileUrl,
+                },
+            });
 
-        await db.scanResult.create({
-            data: {
-                scanId: scan.id,
-                bannedPlayerId: bannedPlayer.id,
-                games: player.lostGames,
-            },
-        });
+            await db.scanResult.create({
+                data: {
+                    scanId: scan.id,
+                    bannedPlayerId: bannedPlayer.id,
+                    games: player.lostGames,
+                },
+            });
+        } catch (err) {
+            console.error(`Failed to save banned player ${player.username}:`, err.message);
+        }
     }
 };
 

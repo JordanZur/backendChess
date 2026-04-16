@@ -1,6 +1,4 @@
-require("dotenv/config");
 const axios = require("axios");
-const cheerio = require("cheerio");
 const fs = require("fs");
 const { saveScan } = require("./dbService");
 
@@ -108,26 +106,6 @@ const fetchRatingChange = async (gameUrl, myColor) => {
     }
 };
 
-const checkProfileOld = async (url, profileMap) => {
-    try {
-        const { data } = await axios.get(url, { headers });
-        const $ = cheerio.load(data);
-        const isBanned = $(".profile-card-disabled-icon.flair-blocked.flair-component").length > 0;
-        if (!isBanned) return null;
-
-        const opponent = profileMap.get(url);
-        if (opponent) {
-            return {
-                username: opponent.username,
-                profileUrl: opponent.url,
-                lostGames: opponent.lostGameLinks,
-            };
-        }
-    } catch {
-        return null;
-    }
-};
-
 const runCheaterDetection = async (username, dateRange) => {
     const archiveUrls = await getArchivesInRange(username, dateRange);
     let allGames = [];
@@ -181,7 +159,9 @@ const runCheaterDetection = async (username, dateRange) => {
 
     fs.writeFileSync(generateResultFilename(username), JSON.stringify(resultData, null, 2), "utf8");
 
-    await saveScan(username, dateRange, bannedPlayers);
+    saveScan(username, dateRange, bannedPlayers).catch(err =>
+        console.error("DB save failed:", err.message)
+    );
 
     return resultData;
 };
