@@ -8,40 +8,10 @@ const headers = {
     "Referer": "https://www.chess.com",
 };
 
-const bannedLogPath = "./banned-log.json";
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function generateResultFilename(username) {
     return `detection-result-${username.replace(/[^a-zA-Z0-9_-]/g, "_")}.json`;
-}
-
-function loadBannedLog() {
-    if (!fs.existsSync(bannedLogPath)) return [];
-    try {
-        const raw = fs.readFileSync(bannedLogPath, "utf8");
-        return JSON.parse(raw || "[]");
-    } catch {
-        return [];
-    }
-}
-
-function saveBannedLog(data) {
-    fs.writeFileSync(bannedLogPath, JSON.stringify(data, null, 2), "utf8");
-}
-
-function saveBannedPlayer(opponent) {
-    const log = loadBannedLog();
-    if (log.some(p => p.username === opponent.username)) return;
-
-    const entry = {
-        username: opponent.username,
-        profileUrl: opponent.url,
-        games: opponent.lostGameLinks,
-        detectedAsBanned: new Date().toISOString(),
-    };
-
-    log.push(entry);
-    saveBannedLog(log);
 }
 
 const getArchivesInRange = async (username, input) => {
@@ -110,7 +80,6 @@ const checkProfile = async (url, profileMap) => {
 
         const opponent = profileMap.get(url);
         if (opponent) {
-            saveBannedPlayer(opponent);
             return {
                 username: opponent.username,
                 profileUrl: opponent.url,
