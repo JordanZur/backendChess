@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Scan {
+  id        Int          @id @default(autoincrement())
+  username  String
+  dateRange String
+  scannedAt DateTime     @default(now())
+  results   ScanResult[]
+}
+
+model BannedPlayer {
+  id            Int          @id @default(autoincrement())
+  username      String       @unique
+  profileUrl    String
+  firstDetected DateTime     @default(now())
+  results       ScanResult[]
+}
+
+model ScanResult {
+  id             Int          @id @default(autoincrement())
+  scan           Scan         @relation(fields: [scanId], references: [id])
+  scanId         Int
+  bannedPlayer   BannedPlayer @relation(fields: [bannedPlayerId], references: [id])
+  bannedPlayerId Int
+  games          Json
+}

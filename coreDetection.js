@@ -1,6 +1,8 @@
+require("dotenv/config");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const fs = require("fs");
+const { saveScan } = require("./dbService");
 
 const headers = {
     "User-Agent": "Mozilla/5.0",
@@ -72,7 +74,7 @@ const extractLostGameOpponents = (games, myUsername) => {
 
 const checkProfile = async (url, profileMap) => {
     try {
-        const username = url.split("/").pop(); // Extract username from URL
+        const username = url.split("/").pop();
         const { data } = await axios.get(`https://api.chess.com/pub/player/${username}`, { headers });
 
         const isBanned = data.status === "closed:fair_play_violations";
@@ -115,7 +117,6 @@ const checkProfileOld = async (url, profileMap) => {
 
         const opponent = profileMap.get(url);
         if (opponent) {
-            saveBannedPlayer(opponent);
             return {
                 username: opponent.username,
                 profileUrl: opponent.url,
@@ -156,7 +157,6 @@ const runCheaterDetection = async (username, dateRange) => {
     const lastResults = await Promise.all(batch);
     bannedPlayers.push(...lastResults.filter(Boolean));
 
-    // Enrich banned players' games with rating change from chess.com callback API
     for (const player of bannedPlayers) {
         const gameBatch = [];
         for (const game of player.lostGames) {
@@ -180,6 +180,8 @@ const runCheaterDetection = async (username, dateRange) => {
     };
 
     fs.writeFileSync(generateResultFilename(username), JSON.stringify(resultData, null, 2), "utf8");
+
+    await saveScan(username, dateRange, bannedPlayers);
 
     return resultData;
 };

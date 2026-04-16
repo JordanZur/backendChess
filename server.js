@@ -1,3 +1,4 @@
+require("dotenv/config");
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -6,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const fs = require("fs");
 const path = require("path");
 const { runCheaterDetection } = require("./coreDetection");
+const { getAllBannedPlayers, getPlayerHistory } = require("./dbService");
 
 const app = express();
 const PORT = process.env.PORT;
@@ -97,6 +99,28 @@ app.post("/api/scan", scanLimiter, async (req, res) => {
 });
 
 
+
+// GET /api/banned — all banned players ever caught across all scans
+app.get("/api/banned", async (req, res) => {
+    try {
+        const players = await getAllBannedPlayers();
+        res.json(players);
+    } catch (err) {
+        console.error("Failed to fetch banned players:", err.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/history/:username — all scans + cheaters found for a specific player
+app.get("/api/history/:username", async (req, res) => {
+    try {
+        const history = await getPlayerHistory(req.params.username);
+        res.json(history);
+    } catch (err) {
+        console.error("Failed to fetch history:", err.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
 
 // Start server
 app.listen(PORT, () => {
