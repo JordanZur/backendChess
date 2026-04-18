@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "build": "prisma generate && prisma migrate deploy",
-    "start": "node server.js"
+    "start": "npx prisma generate && node server.js"
   },
   "dependencies": {
     "@prisma/client": "^7.7.0",
