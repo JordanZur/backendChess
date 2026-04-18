@@ -32,5 +32,3 @@ logs/
 # Temporary files
 *.tmp
 detection-result-*.json
-
-/generated/prisma
