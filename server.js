@@ -12,32 +12,31 @@ const { getAllBannedPlayers, getPlayerHistory } = require("./dbService");
 const app = express();
 const PORT = process.env.PORT;
 
+// CORS must be first — before rate limiters so all responses (including 429s) have CORS headers
+app.use(cors());
+console.log(`✅ CORS enabled for all origins`);
+
 // Security: Helmet - sets various HTTP headers
 app.use(helmet());
 
 // Security: Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Limit each IP to 10 requests per windowMs
+    max: 10,
     message: "Too many requests from this IP, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
 });
 
-// Apply rate limiting to all requests
 app.use(limiter);
 
 // Stricter rate limit for /api/scan endpoint
 const scanLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 3, // Limit to 3 scans per minute per IP
+    max: 3,
     message: "Too many scan requests, please wait before scanning again.",
     skipSuccessfulRequests: false,
 });
-
-// CORS - Allow all origins for now
-app.use(cors());
-console.log(`✅ CORS enabled for all origins`);
 
 app.use(bodyParser.json({ limit: "1mb" }));
 
@@ -63,7 +62,8 @@ const validateScanInput = (username, dateRange) => {
 };
 
 app.post("/api/scan", scanLimiter, async (req, res) => {
-    const { username, dateRange } = req.body;
+    const { dateRange } = req.body;
+    const username = typeof req.body.username === 'string' ? req.body.username.toLowerCase().trim() : req.body.username;
 
     // Input validation
     const validation = validateScanInput(username, dateRange);
@@ -93,6 +93,9 @@ app.post("/api/scan", scanLimiter, async (req, res) => {
         }, 1000);
 
     } catch (err) {
+        if (err.code === 'USER_NOT_FOUND') {
+            return res.status(404).json({ error: err.message });
+        }
         console.error(" Scan failed:", err.message);
         res.status(500).json({ error: "Internal server error" });
     }

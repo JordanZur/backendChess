@@ -106,7 +106,22 @@ const fetchRatingChange = async (gameUrl, myColor) => {
     }
 };
 
+const verifyUserExists = async (username) => {
+    try {
+        await axios.get(`https://api.chess.com/pub/player/${username}`, { headers });
+    } catch (err) {
+        if (err.response?.status === 404 || err.response?.status === 301) {
+            const notFound = new Error(`User "${username}" doesn't exist on chess.com`);
+            notFound.code = 'USER_NOT_FOUND';
+            throw notFound;
+        }
+        throw err;
+    }
+};
+
 const runCheaterDetection = async (username, dateRange) => {
+    await verifyUserExists(username);
+
     const archiveUrls = await getArchivesInRange(username, dateRange);
     let allGames = [];
     for (const url of archiveUrls) {
